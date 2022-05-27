@@ -1,8 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
-import React from 'react';
 import { MultiStepForm } from './MultiStepForm';
 import user from '@testing-library/user-event';
-import { check } from 'prettier';
 
 describe('MultiStepForm', () => {
   const onSubmit = jest.fn();
@@ -26,7 +24,7 @@ describe('MultiStepForm', () => {
     // 3rd step
     user.type(await findDescription(), 'hello');
     clickSubmitButton();
-
+    // expect(onSubmit).toHaveBeenCalledWith({ lazy: true }); // it will show the object sent in the form
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
         city: 'Vila Real',
@@ -42,8 +40,7 @@ describe('MultiStepForm', () => {
   });
 
   it('has 3 required fields on first step', async () => {
-    clickNextButton();
-
+    clickNextButton(); //react Form doesnt need awaitFor : expect(screen.getByText('Your First Name is Required')).toBeInTheDocument()
     await waitFor(() => {
       expect(getFirstName()).toHaveErrorMessage('Your First Name is Required');
     });
@@ -53,65 +50,61 @@ describe('MultiStepForm', () => {
       'You need to select your job situation'
     );
   });
+});
 
-  describe('city field', () => {
-    it('shows error when city has less than 8 chars', async () => {
-      user.type(getCity(), 'Vila');
-      user.tab();
+describe('city field', () => {
+  const onSubmit = jest.fn();
 
-      await waitFor(() => {
-        expect(getCity()).toHaveErrorMessage(
-          'city must be at least 8 characters'
-        );
-      });
-    });
-
-    it('shows error when city has more than 11 chars', async () => {
-      user.type(getCity(), 'Vila Real12312313123');
-      user.tab();
-
-      await waitFor(() => {
-        expect(getCity()).toHaveErrorMessage(
-          'city must be at most 11 characters'
-        );
-      });
+  beforeEach(() => {
+    onSubmit.mockClear();
+    render(<MultiStepForm onSubmit={onSubmit} />);
+  });
+  it('shows error when city has less than 8 chars', async () => {
+    user.type(getCity(), 'Vila');
+    user.tab();
+    await waitFor(() => {
+      expect(getCity()).toHaveErrorMessage(
+        'city must be at least 8 characters'
+      );
     });
   });
 
-  describe('first name field', () => {
-    it('shows error when first name has more than 5 chars', async () => {
-      user.type(getFirstName(), 'Carlos');
-      user.tab();
+  it('shows error when city has more than 11 chars', async () => {
+    user.type(getCity(), 'Vila Real 1234576788');
+    user.tab();
 
-      await waitFor(() => {
-        expect(getFirstName()).toHaveErrorMessage(
-          `Your name can't be longer than 5 chars`
-        );
-      });
+    await waitFor(() => {
+      expect(getCity()).toHaveErrorMessage(
+        'city must be at most 11 characters'
+      );
     });
   });
+});
 
-  describe('money field', () => {
-    it('shows error when money is lower than 1000000 and millionaire selected', async () => {
-      user.type(getFirstName(), 'Bruno');
-      selectJobSituation('Full-Time');
-      user.type(getCity(), 'Vila Real');
-      user.click(getMillionaireCheckbox());
-      clickNextButton();
+describe('money field', () => {
+  const onSubmit = jest.fn();
 
-      // 2nd step
-      user.type(await findMoney(), '100');
-      clickNextButton();
+  beforeEach(() => {
+    onSubmit.mockClear();
+    render(<MultiStepForm onSubmit={onSubmit} />);
+  });
+  it('shows error when money is lower than 1000000', async () => {
+    user.type(getFirstName(), 'Bruno');
+    selectJobSituation('Full-Time');
+    user.type(getCity(), 'Vila Real');
+    user.click(getMillionaireCheckbox());
+    clickNextButton();
 
-      await waitFor(async () => {
-        expect(await findMoney()).toHaveErrorMessage(
-          'Because you said you are a millionaire you need to have 1 million'
-        );
-      });
+    // 2nd step
+    user.type(await findMoney(), '100');
+    clickNextButton();
+
+    await waitFor(async () => {
+      expect(await findMoney()).toHaveErrorMessage(
+        'Because you said you are a millionaire you need to have 1 million'
+      );
     });
   });
-
-  // TODO: more tests during the video
 });
 
 function clickSubmitButton() {
@@ -119,7 +112,7 @@ function clickSubmitButton() {
 }
 
 function findDescription() {
-  return screen.findByRole('textbox', { name: /Description/i });
+  return screen.findByRole('textbox', { name: /description/i });
 }
 
 function findMoney() {
@@ -131,7 +124,7 @@ function clickNextButton() {
 }
 
 function getMillionaireCheckbox() {
-  return screen.getByRole('checkbox', { name: /I am a millionaire/i });
+  return screen.getByRole('checkbox', { name: /i am a millionaire/i });
 }
 
 function getCity() {
@@ -143,7 +136,7 @@ function getFirstName() {
 }
 
 function getSelectJobSituation() {
-  return screen.getByRole('combobox', { name: /JOB situation/i });
+  return screen.getByRole('combobox', { name: /job situation/i });
 }
 
 function selectJobSituation(jobSituation: string) {
